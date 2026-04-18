@@ -24,11 +24,14 @@ export async function POST(request) {
     );
   }
 
-  const { prompt } = await request.json();
+  const { prompt, images } = await request.json();
 
   const options = {
-    model: 'black-forest-labs/flux-schnell',
-    input: { prompt }
+    model: 'google/nano-banana',
+    input: {
+      prompt,
+      image_input: images,
+    }
   }
 
   if (WEBHOOK_HOST) {
