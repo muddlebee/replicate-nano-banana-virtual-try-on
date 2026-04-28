@@ -1,9 +1,35 @@
 'use client';
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Replicate may return a URL string or an array of URLs depending on the model. */
+function resultImageUrl(output) {
+  if (output == null) return null;
+  if (typeof output === 'string') return output;
+  if (Array.isArray(output) && output.length > 0) {
+    const last = output[output.length - 1];
+    return typeof last === 'string' ? last : null;
+  }
+  return null;
+}
+
+/** Try to extract a readable error from JSON error bodies. */
+function messageFromJsonBody(text, status) {
+  try {
+    const data = JSON.parse(text);
+    const d = data?.detail ?? data?.message ?? data?.error;
+    if (typeof d === 'string') return d;
+    if (d != null) return JSON.stringify(d);
+  } catch {
+    /* ignore */
+  }
+  const trimmed = text?.trim?.() ?? '';
+  if (trimmed) return trimmed.slice(0, 500);
+  return `Request failed (${status})`;
+}
 
 const DEFAULT_PROMPT = "A photorealistic fashion photograph. The subject from Image 1 is wearing the complete ensemble from Image 2. All original garments visible in Image 1 are completely removed and are no longer present. The items from Image 2 are mapped directly onto the subject's anatomy, fitting the body perfectly. The texture, color, and structure of the garments from Image 2 are preserved exactly.";
 
@@ -42,20 +68,52 @@ export default function Home() {
 
     const validImages = images.filter(img => img !== null);
 
-    const response = await fetch("/api/predictions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        images: validImages,
-      }),
-    });
+    let response;
+    try {
+      response = await fetch("/api/predictions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          images: validImages,
+        }),
+      });
+    } catch (networkErr) {
+      console.error("[try-on] POST /api/predictions failed (network)", networkErr);
+      setError(
+        networkErr instanceof Error
+          ? networkErr.message
+          : "Network error while starting generation."
+      );
+      setLoading(false);
+      return;
+    }
 
-    let prediction = await response.json();
+    const postText = await response.text();
+    let prediction;
+    try {
+      prediction = JSON.parse(postText);
+    } catch (parseErr) {
+      console.error(
+        "[try-on] Failed to parse POST response",
+        parseErr,
+        response.status,
+        postText.slice(0, 200)
+      );
+      setError(messageFromJsonBody(postText, response.status));
+      setLoading(false);
+      return;
+    }
+
     if (response.status !== 201) {
-      setError(prediction.detail);
+      const msg =
+        prediction?.detail ??
+        prediction?.message ??
+        `Request failed (${response.status})`;
+      console.error("[try-on] POST rejected", response.status, prediction);
+      setError(typeof msg === "string" ? msg : JSON.stringify(msg));
       setLoading(false);
       return;
     }
@@ -66,15 +124,67 @@ export default function Home() {
       prediction.status !== "failed"
     ) {
       await sleep(1000);
-      const response = await fetch(`/api/predictions/${prediction.id}`);
-      prediction = await response.json();
-      if (response.status !== 200) {
-        setError(prediction.detail);
+      let pollResponse;
+      try {
+        pollResponse = await fetch(`/api/predictions/${prediction.id}`);
+      } catch (networkErr) {
+        console.error("[try-on] poll failed (network)", networkErr);
+        setError(
+          networkErr instanceof Error
+            ? networkErr.message
+            : "Network error while waiting for result."
+        );
+        setLoading(false);
+        return;
+      }
+      const pollText = await pollResponse.text();
+      try {
+        prediction = JSON.parse(pollText);
+      } catch (parseErr) {
+        console.error(
+          "[try-on] Failed to parse poll response",
+          parseErr,
+          pollText.slice(0, 200)
+        );
+        setError(messageFromJsonBody(pollText, pollResponse.status));
+        setLoading(false);
+        return;
+      }
+      if (pollResponse.status !== 200) {
+        const msg =
+          prediction?.detail ??
+          prediction?.message ??
+          `Poll failed (${pollResponse.status})`;
+        console.error("[try-on] poll rejected", pollResponse.status, prediction);
+        setError(typeof msg === "string" ? msg : JSON.stringify(msg));
         setLoading(false);
         return;
       }
       setPrediction(prediction);
     }
+
+    if (prediction.status === "failed") {
+      const err =
+        prediction.error ??
+        prediction.logs ??
+        "The model reported failure with no message.";
+      const msg = typeof err === "string" ? err : JSON.stringify(err);
+      console.error("[try-on] prediction failed", prediction.id, err);
+      setError(msg);
+      setLoading(false);
+      return;
+    }
+
+    const url = resultImageUrl(prediction.output);
+    if (!url) {
+      console.error("[try-on] succeeded but no output URL", prediction.output);
+      setError(
+        "Generation finished but no image URL was returned. Check server logs for details."
+      );
+      setLoading(false);
+      return;
+    }
+
     setLoading(false);
   };
 
@@ -176,15 +286,22 @@ export default function Home() {
           {/* Right: Result */}
           <section className="lg:col-span-5 lg:sticky lg:top-8" ref={resultRef}>
             <div className="relative aspect-[3/4] w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-[#D9D1C7]/30">
-              {prediction?.output ? (
+              {prediction && resultImageUrl(prediction.output) ? (
                 <div className="relative w-full h-full group">
                   <Image
                     fill
-                    src={prediction.output[prediction.output.length - 1]}
+                    src={resultImageUrl(prediction.output)}
                     alt="Output"
                     className="object-cover animate-in fade-in zoom-in-95 duration-1000 ease-out"
                     sizes="(max-width: 1024px) 100vw, 40vw"
                     priority
+                    onError={() => {
+                      const u = resultImageUrl(prediction.output);
+                      console.error('[try-on] result image failed to load', u);
+                      setError(
+                        'Failed to load the result image. If the URL uses a host not allowed in next.config.js images.remotePatterns, add it.'
+                      );
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   
@@ -192,7 +309,7 @@ export default function Home() {
                     <button
                       onClick={() => {
                         const link = document.createElement('a');
-                        link.href = prediction.output[prediction.output.length - 1];
+                        link.href = resultImageUrl(prediction.output);
                         link.download = `try-on-${prediction.id}.webp`;
                         document.body.appendChild(link);
                         link.click();
