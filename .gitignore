@@ -32,3 +32,7 @@ yarn-error.log*
 .vercel
 
 yarn.lock
+
+#ignore all env files and .env.example and related suffixes
+.env*
+.env.example

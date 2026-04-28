@@ -190,23 +190,23 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#F8F5F2] text-[#433E3A] font-sans selection:bg-[#EAE3DC]">
-      <div className="max-w-5xl mx-auto px-5 py-8 md:py-20">
-        <header className="mb-10 md:mb-16 text-center">
-          <div className="inline-block px-3 py-1 mb-4 border border-[#D9D1C7] rounded-full text-[9px] md:text-[10px] uppercase tracking-[0.3em] text-[#8B7E74]">
+      <div className="max-w-5xl mx-auto px-5 py-5 md:py-8">
+        <header className="mb-5 md:mb-7 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 mb-2 border border-[#D9D1C7] rounded-full text-[9px] uppercase tracking-[0.3em] text-[#8B7E74]">
             AI Fashion Studio
           </div>
-          <h1 className="text-4xl md:text-6xl font-extralight tracking-tight text-[#2D2926]">
+          <h1 className="text-2xl md:text-4xl font-extralight tracking-tight text-[#2D2926]">
             Virtual Try-On
           </h1>
         </header>
 
-        <main className="grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-16 items-start">
+        <main className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-8 items-start">
           {/* Left: Configuration */}
-          <section className="lg:col-span-7 space-y-8 md:space-y-12">
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
+          <section className="lg:col-span-7 space-y-4 md:space-y-5">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               {[0, 1].map((idx) => (
                 <div key={idx} className="relative group">
-                  <div className={`aspect-[3/4] rounded-xl border-2 border-dashed border-[#D9D1C7] bg-white/50 overflow-hidden flex items-center justify-center transition-all duration-500 ${!images[idx] ? 'hover:border-[#8B7E74] hover:bg-white' : 'border-solid border-[#D9D1C7]'}`}>
+                  <div className={`aspect-[3/4] lg:aspect-auto lg:h-[200px] rounded-xl border-2 border-dashed border-[#D9D1C7] bg-white/50 overflow-hidden flex items-center justify-center transition-all duration-500 ${!images[idx] ? 'hover:border-[#8B7E74] hover:bg-white' : 'border-solid border-[#D9D1C7]'}`}>
                     {images[idx] ? (
                       <img
                         src={images[idx]}
@@ -214,11 +214,11 @@ export default function Home() {
                         className="w-full h-full object-cover animate-in fade-in duration-700"
                       />
                     ) : (
-                      <div className="text-center p-4 md:p-6 space-y-2 md:space-y-3">
-                        <div className="w-8 h-8 md:w-10 md:h-10 mx-auto bg-white rounded-full shadow-sm flex items-center justify-center text-[#8B7E74] group-hover:scale-110 transition-transform">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="md:w-5 md:h-5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      <div className="text-center p-3 md:p-4 space-y-2">
+                        <div className="w-8 h-8 mx-auto bg-white rounded-full shadow-sm flex items-center justify-center text-[#8B7E74] group-hover:scale-110 transition-transform">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                         </div>
-                        <span className="block text-[9px] md:text-[10px] uppercase tracking-[0.2em] font-medium text-[#8B7E74] opacity-80">
+                        <span className="block text-[9px] uppercase tracking-[0.2em] font-medium text-[#8B7E74] opacity-80">
                           {idx === 0 ? "Subject" : "Garment"}
                         </span>
                       </div>
@@ -246,19 +246,19 @@ export default function Home() {
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 md:space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <textarea
                 name="prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 aria-label="Styling instructions for the try-on"
-                className="w-full h-36 md:h-40 py-3 px-3 sm:px-4 md:px-5 bg-white border border-[#D9D1C7] rounded-xl text-xs md:text-sm leading-relaxed resize-y max-h-[50vh] md:max-h-96 focus:outline-none focus:ring-2 focus:ring-[#8B7E74]/10 focus:border-[#8B7E74] transition-all"
+                className="w-full h-24 md:h-28 py-2.5 px-3 sm:px-4 bg-white border border-[#D9D1C7] rounded-xl text-xs leading-relaxed resize-y max-h-40 focus:outline-none focus:ring-2 focus:ring-[#8B7E74]/10 focus:border-[#8B7E74] transition-all"
               />
 
               <button
                 type="submit"
                 disabled={loading || !images[0] || !images[1]}
-                className={`w-full py-4 md:py-5 px-8 md:px-10 text-[10px] md:text-xs uppercase tracking-[0.4em] font-bold transition-all duration-500 rounded-xl shadow-lg hover:shadow-xl active:scale-[0.98] ${
+                className={`w-full py-3 px-8 text-[10px] uppercase tracking-[0.4em] font-bold transition-all duration-500 rounded-xl shadow-md hover:shadow-lg active:scale-[0.98] ${
                   loading || !images[0] || !images[1]
                     ? "bg-[#D9D1C7] text-white cursor-not-allowed shadow-none"
                     : "bg-[#433E3A] text-white hover:bg-[#2D2926]"
@@ -277,7 +277,7 @@ export default function Home() {
             </form>
 
             {error && (
-              <div className="p-4 bg-red-50 text-red-900 text-xs rounded-xl border border-red-100">
+              <div className="p-3 bg-red-50 text-red-900 text-xs rounded-xl border border-red-100">
                 <strong>Error:</strong> {error}
               </div>
             )}
@@ -285,7 +285,7 @@ export default function Home() {
 
           {/* Right: Result */}
           <section className="lg:col-span-5 lg:sticky lg:top-8" ref={resultRef}>
-            <div className="relative aspect-[3/4] w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-[#D9D1C7]/30">
+            <div className="relative aspect-[3/4] lg:aspect-auto lg:h-[calc(100vh-12rem)] max-h-[600px] w-full rounded-2xl bg-white shadow-xl overflow-hidden border border-[#D9D1C7]/30">
               {prediction && resultImageUrl(prediction.output) ? (
                 <div className="relative w-full h-full group">
                   <Image
@@ -363,7 +363,7 @@ export default function Home() {
           </section>
         </main>
 
-        <footer className="mt-20 md:mt-40 pt-12 md:pt-16 border-t border-[#D9D1C7]/50 flex flex-col md:flex-row justify-between items-center gap-8 md:gap-12 text-center">
+        <footer className="mt-8 md:mt-12 pt-6 md:pt-8 border-t border-[#D9D1C7]/50 flex flex-col md:flex-row justify-between items-center gap-4 md:gap-6 text-center">
           <div className="flex gap-6 md:gap-10 text-[9px] md:text-[10px] uppercase tracking-[0.3em] font-bold text-[#8B7E74]">
             <a href="#" className="hover:text-[#433E3A] transition-colors">Archive</a>
             <a href="#" className="hover:text-[#433E3A] transition-colors">Privacy</a>
